@@ -46,19 +46,18 @@ function login(req, res) {
     userModel.findOne({email: email})
     .then(function(user){
         if(!user){
-            res.status(404).send({ message: 'El usuario no existe'});
-        } else{
+            throw new Error('El usuario no existe');
+        }
             login = user;
             return bcrypt.compare(password, user.password);
-        }
     }).then(function(check){
         if(check){
             res.status(200).send({user: login, token: jwt.createToken(login)});
         } else{
-            res.status(404).send({ message: 'Contraseña incorrecta'});
+            throw new Error('Contraseña incorrecta');
         }
     }).catch(function(err){
-        res.status(500).send({ message: 'Error en la peticion'});
+        res.status(404).send({ message: err.message});
     });
 }
 
@@ -80,14 +79,14 @@ function updateProfile(req, res){
     var update = req.body;
 
     if (userId != req.user.sub) {
-        return res.status(500).send({ message: 'No tienes permiso para actualizar este usuario' });
+        throw new Error('No tienes permiso para actualizar este usuario');
     }
 
     userModel.findByIdAndUpdate(userId, update).then(function (userUpdated) {
         res.status(200).send({ user: userUpdated });
     })
     .catch(function (err) {
-        res.status(500).send({ message: 'Error al actualizar el perfil' });
+        res.status(500).send({ message: err.message });
     });
 }
 
