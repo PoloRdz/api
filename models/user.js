@@ -8,7 +8,7 @@ var userSchema = Schema({
     surname: String,
     email: String,
     password: String,
-    isAdmin: String,
+    isAdmin: {type: Boolean, default: 'false'},
     department: {type: Schema.ObjectId, ref: 'Department'},
     image: String
 });

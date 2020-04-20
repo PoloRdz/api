@@ -6,6 +6,8 @@ var express = require('express');
 var app = express();
 
 var user_routes = require('./routes/user');
+var role_routes = require('./routes/role');
+var department_routes = require('./routes/department');
 
 // cargar rutas
 app.use(express.urlencoded({extender:false}));
@@ -23,6 +25,9 @@ app.use((req, res, next) => {
 
 //rutas base
 app.use('/api', user_routes);
+app.use('/api', role_routes);
+app.use('/api', department_routes);
+
 // app.use('/api', artist_routes);
 // app.use('/api', album_routes);
 // app.use('/api', song_routes);

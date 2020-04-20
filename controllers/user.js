@@ -22,7 +22,7 @@ function saveUser(req, res) {
         if(!user){
             return bcrypt.genSalt(10);
         } else{
-            res.status(409).send({message: 'El email que intentas registrar ya existe'});
+            throw new Error("El email que intentas registrar ya existe");
         }
     }).then(function(salt){
         return bcrypt.hash(params.password, salt);
@@ -32,7 +32,7 @@ function saveUser(req, res) {
     }).then(function(savedUser){
         res.status(200).send({user: savedUser});
     }).catch(function (err) {
-        res.status(500).send({ message: 'Error al guardar usuario' });
+        res.status(500).send({ message: err.message });
     });
 }
 

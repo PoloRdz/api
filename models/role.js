@@ -4,7 +4,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var roleSchema = Schema({
-    role: String,
+    name: String,
     identifier: String
 });
 
