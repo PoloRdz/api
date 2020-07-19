@@ -6,8 +6,12 @@ var express = require('express');
 var app = express();
 
 var user_routes = require('./routes/user');
-var role_routes = require('./routes/role');
-var department_routes = require('./routes/department');
+var organization_routes = require('./routes/organization');
+var dispatch_routes = require('./routes/dispatch');
+var leaseOperator_routes = require('./routes/leaseOperator');
+var lease_routes = require('./routes/lease');
+var terminal_routes = require('./routes/terminal');
+var order_routes = require('./routes/order');
 
 // cargar rutas
 app.use(express.urlencoded({extender:false}));
@@ -24,9 +28,13 @@ app.use((req, res, next) => {
 });
 
 //rutas base
-app.use('/api', user_routes);
-app.use('/api', role_routes);
-app.use('/api', department_routes);
+app.use('/api/user', user_routes);
+app.use('/api/organization', organization_routes);
+app.use('/api/dispatch', dispatch_routes);
+app.use('/api/lease-operator', leaseOperator_routes);
+app.use('/api/lease', lease_routes);
+app.use('/api/terminal', terminal_routes);
+app.use('/api/order', order_routes);
 
 // app.use('/api', artist_routes);
 // app.use('/api', album_routes);

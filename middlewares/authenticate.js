@@ -23,3 +23,14 @@ exports.ensureAuth = function(req, res, next){
 
     next();
 }
+
+exports.isAdmin = function(req, res, next){
+    var user = req.user;
+    
+    if(!user.isAdmin){
+        return res.status(403).send({message: 'No tienes permisos para realizar esta acción'});
+    }
+
+    next();
+    
+}

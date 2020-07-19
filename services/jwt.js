@@ -9,8 +9,9 @@ exports.createToken = function(user){
         sub: user._id,
         name: user.name,
         surname: user.surname,
+        username: user.username,
+        isAdmin: user.isAdmin,
         email: user.email,
-        role: user.role,
         iat: moment().unix(),
         exp: moment().add(2, 'days').unix()
     };

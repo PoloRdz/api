@@ -1,28 +1,33 @@
 'use strict'
 
-var userModel = require('../models/user');
+var UserModel = require('../models/user');
 var bcrypt = require('bcrypt');
 var jwt = require('../services/jwt');
 var fs = require('fs');
 var path = require('path');
 
 function saveUser(req, res) {
-    var user = new userModel();
+    var user = new UserModel();
     var params = req.body;
 
     user.name = params.name;
     user.surname = params.surname;
     user.email = params.email.toLowerCase();
     user.isAdmin = params.isAdmin;
-    user.department = params.department;
+    user.username = params.username;
     user.image = null;
 
-    userModel.findOne({email: user.email})
+    UserModel.findOne({
+        $or: [
+            {email: user.email},
+            {username: user.username}
+        ]
+    })
     .then(function(user){
         if(!user){
             return bcrypt.genSalt(10);
         } else{
-            throw new Error("El email que intentas registrar ya existe");
+            throw new Error("US409");
         }
     }).then(function(salt){
         return bcrypt.hash(params.password, salt);
@@ -32,45 +37,107 @@ function saveUser(req, res) {
     }).then(function(savedUser){
         res.status(200).send({user: savedUser});
     }).catch(function (err) {
-        res.status(500).send({ message: err.message });
+        if(err.message == 'US409'){
+            res.status(500).send({ message: 'The user you\'re trying to create already exists'});    
+        } else{
+            res.status(500).send({ message: err.message });
+        }        
+    });
+}
+
+function getUser(req, res){
+    var id = req.params.id;
+
+    UserModel.findOne({_id: id})
+    .then(function(user){
+        if(user){
+            res.status(200).send({user: user});
+        } else{
+            throw new Error('El usuario no existe');
+        }
+    })
+    .catch(function(error){
+        res.status(500).send({message: error.message});
+    });
+}
+
+function getUsers(req, res){
+    UserModel.find()
+    .then(function(users){
+        if(users)
+            res.status(200).send({users: users});
+        else
+            throw new Error('US404');
+    })
+    .catch(function(error){
+        if(error.message == 'US404')
+            res.status(404).send({message: 'There are no users available'});
+        else
+            res.status(500).send({message: 'Unexpected Server Error'});
     });
 }
 
 function login(req, res) {
-    var login = new userModel();
+    var login = new UserModel();
     var params = req.body;
 
     var email = params.email.toLowerCase();
     var password = params.password;
 
-    userModel.findOne({email: email})
+    UserModel.findOne({email: email})
     .then(function(user){
         if(!user){
-            throw new Error('El usuario no existe');
+            throw new Error('US404');
         }
-            login = user;
-            return bcrypt.compare(password, user.password);
+        login = user;
+        return bcrypt.compare(password, user.password);
     }).then(function(check){
         if(check){
             res.status(200).send({user: login, token: jwt.createToken(login)});
         } else{
-            throw new Error('Contraseña incorrecta');
+            throw new Error('US401');
         }
     }).catch(function(err){
-        res.status(404).send({ message: err.message});
+        if(err.message == 'US404')
+            res.status(404).send({message: 'Incorrect username'});
+        else if(err.message == 'US401')
+            res.status(401).send({message: 'Incorrect password'})
+        else 
+            res.status(500).send({message: 'Unexpected Server Error'});
+    });
+}
+
+function findOne(req, res) {
+    var login = new UserModel();
+
+    var email = req.query.email;
+
+    UserModel.findOne({email: email})
+    .then(function(user){
+        if(!user){
+            throw new Error('US404');
+        }
+        res.status(200).send({user: user});
+    }).catch(function(err){
+        if(error.message == 'US404')
+            res.status(404).send({message: 'User not found'});
+        else
+            res.status(500).send({ message: 'Unexpected Server Error'});
     });
 }
 
 function updateUser(req, res) {
     var userId = req.params.id;
     var update = req.body;
+    //user.department = body.department._id;
 
-    userModel.findByIdAndUpdate(userId, update)
+    UserModel.findByIdAndUpdate(userId, update)
     .then(function (userUpdated) {
         res.status(200).send({ user: userUpdated });
     })
     .catch(function (err) {
-        res.status(500).send({ message: 'Error al actualizar el usuario' });
+        console.log(err);
+        res.status(500).send({ message: 'Error al actualizar el usuario' });        
     });
 }
 
@@ -82,11 +149,22 @@ function updateProfile(req, res){
         throw new Error('No tienes permiso para actualizar este usuario');
     }
 
-    userModel.findByIdAndUpdate(userId, update).then(function (userUpdated) {
+    UserModel.findByIdAndUpdate(userId, update).then(function (userUpdated) {
         res.status(200).send({ user: userUpdated });
     })
     .catch(function (err) {
         res.status(500).send({ message: err.message });
+    });
+}
+
+function deleteUser(req, res){
+    var userId = req.params.id;
+
+    UserModel.findByIdAndDelete(userId).then(function(deletedUser){
+        res.status(200).send({user: deletedUser});
+    })
+    .catch(function(err){
+        res.status(500).send({message: 'Internal Server Error'});
     });
 }
 
@@ -102,15 +180,15 @@ function uploadImage(req, res) {
         var ext_split = file_name.split('\.');
         var file_ext = ext_split[1];
         if (file_ext == 'png' || file_ext == 'jpg' || file_ext == 'gif' || file_ext == 'jfif') {
-            userModel.findByIdAndUpdate(userId, { image: file_name }, (err, userUpdated) => {
+            UserModel.findByIdAndUpdate(userId, { image: file_name }, (err, userUpdated) => {
                 if (!userUpdated) {
-                    res.status(404).send({ message: 'No se ha podido actualizar el usuario' });
+                    res.status(404).send({ message: 'Couldn\'t save image' });
                 } else {
                     res.status(200).send({ image: file_name, user: userUpdated });
                 }
             });
         } else {
-            res.status(200).send({ message: 'Extensión del archivo no valida' })
+            res.status(200).send({ message: 'Invalid file extension' })
         }
 
         console.log(ext_split);
@@ -133,9 +211,13 @@ function getImageFile(req, res) {
 
 module.exports = {
     saveUser,
+    getUser,
     login,
     updateUser,
     updateProfile,
+    deleteUser,
+    getUsers,
     uploadImage,
-    getImageFile
+    getImageFile,
+    findOne
 };

@@ -6,10 +6,10 @@ var Schema = mongoose.Schema;
 var userSchema = Schema({
     name: String,
     surname: String,
+    username: String,
     email: String,
     password: String,
     isAdmin: {type: Boolean, default: 'false'},
-    department: {type: Schema.ObjectId, ref: 'Department'},
     image: String
 });
 

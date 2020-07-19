@@ -5,6 +5,7 @@ var Schema = mongoose.Schema;
 
 var userSchema = Schema({
     name: String,
+    identifier: String,
     description: String
 });
 
